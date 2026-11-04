@@ -26,8 +26,7 @@
 name: Upstream watch
 
 on:
-  schedule:
-    - cron: "0 8 * * 1" # 08:00 UTC every Monday
+  # Manual only in this adaptation; publishing the repo starts no recurring issues.
   workflow_dispatch:
 
 permissions:

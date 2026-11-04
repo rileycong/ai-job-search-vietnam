@@ -13,8 +13,7 @@
 name: Weekly release
 
 on:
-  schedule:
-    - cron: "0 6 * * 1" # 06:00 UTC every Monday
+  # Manual only in this adaptation; publishing the repo starts no weekly releases.
   workflow_dispatch:
     inputs:
       version:
