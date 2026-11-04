@@ -132,8 +132,9 @@ def main() -> int:
     parser.add_argument("--results", type=Path)
     parser.add_argument("--portal")
     parser.add_argument("--domain")
+    parser.add_argument("--state", type=Path, default=STATE)
+    parser.add_argument("--tracker", type=Path, default=TRACKER)
     args = parser.parse_args()
-    args.state, args.tracker = STATE, TRACKER
     try:
         if args.command != "history" and args.results is None:
             parser.error("candidates and store need --results")

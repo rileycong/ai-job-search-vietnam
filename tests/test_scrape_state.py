@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,6 +31,19 @@ class ScrapeStateTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             self.assertEqual(scrape_state.run(args), 0)
         return json.loads(output.getvalue())
+
+    def test_cli_custom_state_and_tracker_keep_test_runs_isolated(self):
+        self.state.parent.mkdir()
+        row = {"title": "Engineer", "company": "Acme", "url": "https://jobs.test/old"}
+        self.state.write_text(json.dumps({"seen": {"old": row}}))
+        self.results.write_text(json.dumps([row]))
+        proc = subprocess.run([sys.executable, str(ROOT / "tools/scrape_state.py"),
+                               "candidates", "--results", str(self.results),
+                               "--state", str(self.state), "--tracker", str(self.tracker)],
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["already_seen"], 1)
+        self.assertEqual(json.loads(proc.stdout)["selected"], [])
 
     def test_candidates_excludes_history_tracker_and_repeated_hits_before_detail(self):
         old = {f"old_{i}": {"title": f"Old {i}", "company": "Archive", "url": f"https://jobs.test/{i}"} for i in range(1000)}

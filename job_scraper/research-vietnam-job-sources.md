@@ -4,6 +4,32 @@ _Investigated 4 November 2026. This note records observed access and published
 integration routes. It does not authorize bypassing a board's access controls or
 terms._
 
+## Shared-flow implementation update
+
+The shared collector (`tools/vietnam_search.py`) now combines enabled CareerViet
+and Vieclam24h connectors, retains full descriptions, deduplicates employer/title
+pairs with all source links, and reports partial source failures. Vieclam24h
+supports tested IT and marketing category routes, up to three pages and a bounded
+detail scan. Its tested `keyword=` route returned identical unrelated results,
+so keywords are filtered locally on fetched text rather than trusted server-side.
+
+Live integration returned one matching Vieclam24h full description after six
+bounded detail requests. CareerViet stopped on invalid robots content; results
+from other sources were retained. JoyWork keyword search, distinct pagination,
+repeat results and a nonsense-query control passed. `--references` adds its public
+links in a separate, nonrankable array. Its content signals include `search=yes`,
+`ai-train=no`, and `use=reference`; AI ranking/full-text use remains disabled
+pending clarification. This replaces the earlier assumption that no usable
+JoyWork public listing endpoint had been found.
+
+VietnamWorks remains unverified: public pages/facets responded, but a matching
+search-to-description chain was not established. Fresh TopCV/Indeed probes
+returned 403; JobsGO's robots request returned 403. Those sources are disabled
+for automatic retrieval. Explicit health probes and offline imports remain.
+
+The earlier investigation below records the initial findings and integration
+options; its "next" recommendations predate these connector additions.
+
 ## What the blocked responses mean
 
 The MVP's direct, read-only probes returned HTTP 403 from TopCV, Indeed Vietnam,

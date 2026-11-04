@@ -104,11 +104,84 @@ class VietnamJobsTests(unittest.TestCase):
         self.assertEqual((rc, out), (1, ""))
         self.assertEqual(json.loads(err)["code"], "BAD_RECORD")
 
-    def test_blocked_topcv_is_explicit_failure(self):
-        with patch.object(v, "fetch", side_effect=v.Failure("BLOCKED", "HTTP 403")):
-            rc, out, err = self.run_main(["search", "--source", "topcv", "--query", "python"])
-        self.assertEqual((rc, out), (1, ""))
-        self.assertEqual(json.loads(err)["code"], "BLOCKED")
+    def test_disabled_sources_reject_search_and_detail_before_network(self):
+        for source in v.SOURCES:
+            if v.enabled(source):
+                continue
+            for args in (["search", "--source", source, "--query", "python"],
+                         ["detail", "--source", source, "--url", "https://example.com/posting"]):
+                with self.subTest(args=args), patch.object(v, "fetch") as fetch:
+                    rc, out, err = self.run_main(args)
+                    self.assertEqual((rc, out), (1, ""))
+                    self.assertEqual(json.loads(err)["code"], "SOURCE_DISABLED")
+                    fetch.assert_not_called()
+
+    def test_default_health_contacts_enabled_connectors_and_reports_skips(self):
+        markup = (FIXTURES / 'careerviet-search.html').read_text()
+        with patch.object(v, 'fetch', return_value=markup) as fetch:
+            rc, out, err = self.run_main(['health'])
+        self.assertEqual((rc, err), (0, ''))
+        self.assertEqual([call.args[1] for call in fetch.call_args_list], ['careerviet', 'vieclam24h'])
+        data = json.loads(out)
+        self.assertEqual([r['source'] for r in data['results']], ['careerviet', 'vieclam24h'])
+        self.assertEqual(set(data['meta']['skipped_disabled']), set(v.SOURCES) - {'careerviet', 'vieclam24h'})
+
+    def test_health_with_no_enabled_sources_makes_no_requests(self):
+        sources = {key: {**value, 'enabled': False} for key, value in v.SOURCES.items()}
+        with patch.object(v, 'SOURCES', sources), patch.object(v, 'fetch') as fetch:
+            rc, out, err = self.run_main(['health'])
+        self.assertEqual((rc, err), (0, ''))
+        fetch.assert_not_called()
+        self.assertEqual(json.loads(out)['results'], [])
+
+    def test_enabled_health_failure_does_not_fall_back_to_disabled_boards(self):
+        with patch.object(v, 'fetch', side_effect=v.Failure('BLOCKED', 'HTTP 403')) as fetch:
+            rc, out, err = self.run_main(['health'])
+        self.assertEqual((rc, err), (0, ''))
+        self.assertEqual([call.args[1] for call in fetch.call_args_list], ['careerviet', 'vieclam24h'])
+        self.assertEqual(json.loads(out)['results'][0]['code'], 'BLOCKED')
+
+    def test_explicit_probe_contacts_only_requested_disabled_source(self):
+        with patch.object(v, 'fetch', side_effect=v.Failure('BLOCKED', 'HTTP 403')) as fetch:
+            rc, out, err = self.run_main(['health', '--source', 'topcv'])
+        self.assertEqual((rc, err), (0, ''))
+        fetch.assert_called_once_with(v.PROBES['topcv'], 'topcv')
+        data = json.loads(out)
+        self.assertTrue(data['results'][0]['explicit_probe'])
+        self.assertFalse(data['results'][0]['enabled'])
+        self.assertFalse(v.enabled('topcv'))
+
+    def test_default_collect_respects_disabled_careerviet(self):
+        with patch.dict(v.SOURCES, {'careerviet': {**v.SOURCES['careerviet'], 'enabled': False}}), patch.object(v, 'fetch') as fetch:
+            rc, out, err = self.run_main(['collect', '--query', 'python'])
+        self.assertEqual((rc, out), (1, ''))
+        self.assertEqual(json.loads(err)['code'], 'SOURCE_DISABLED')
+        fetch.assert_not_called()
+
+    def test_new_source_without_enable_flag_is_not_probed(self):
+        with patch.dict(v.SOURCES, {'future_board': {'probe_url': 'https://example.com/'}}):
+            self.assertFalse(v.enabled('future_board'))
+            with patch.object(v, 'fetch', return_value=(FIXTURES / 'careerviet-search.html').read_text()) as fetch:
+                self.run_main(['health'])
+            self.assertEqual([call.args[1] for call in fetch.call_args_list], ['careerviet', 'vieclam24h'])
+
+    def test_manual_import_still_works_for_every_disabled_board_offline(self):
+        urls = {'topcv': TOPCV_URL, 'indeed': 'https://vn.indeed.com/viewjob?jk=example',
+                'vietnamworks': 'https://www.vietnamworks.com/example-123-jv',
+                'joywork': 'https://joywork.vn/jobs/example',
+                'jobsgo': 'https://jobsgo.vn/viec-lam/example.html',
+                'vieclam24h': 'https://vieclam24h.vn/it/example-id123.html'}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'postings.json'
+            for source, url in urls.items():
+                path.write_text(json.dumps([{'title': 'Role', 'company': 'Example', 'url': url,
+                                             'description': 'Complete user-provided description'}]))
+                with self.subTest(source=source), patch.object(v, 'fetch') as fetch, patch.object(v, 'gate') as gate:
+                    rc, out, err = self.run_main(['import', '--source', source, '--input', str(path)])
+                    self.assertEqual((rc, err), (0, ''))
+                    self.assertEqual(json.loads(out)['results'][0]['retrieval'], 'imported_text')
+                    fetch.assert_not_called()
+                    gate.assert_not_called()
 
     def test_location_filter_limit_and_coverage(self):
         markup = (FIXTURES / "careerviet-search.html").read_text()

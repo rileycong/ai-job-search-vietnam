@@ -26,7 +26,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "job_scraper/vietnam_sources.json"
 UA = "Mozilla/5.0 (compatible; vietnam-jobs-cli/0.1)"
 MAX_BYTES = 5 * 1024 * 1024
-PROBES = {s["id"]: s["probe_url"] for s in json.loads(REGISTRY.read_text(encoding="utf-8"))["sources"]}
+SOURCES = {s["id"]: s for s in json.loads(REGISTRY.read_text(encoding="utf-8"))["sources"]}
+PROBES = {key: source["probe_url"] for key, source in SOURCES.items()}
 HOSTS = {key: urlsplit(url).hostname for key, url in PROBES.items()}
 
 
@@ -36,12 +37,25 @@ class Failure(Exception):
         self.code = code
 
 
+def enabled(source):
+    # Fail closed for future/unverified entries without an explicit opt-in.
+    return SOURCES[source].get("enabled") is True
+
+
+def require_enabled(source):
+    if not enabled(source):
+        raise Failure("SOURCE_DISABLED", f"{source} is disabled for automatic retrieval. "
+                      "Manual import is available without network access. To explicitly probe access, "
+                      f"run health --source {source}; a probe does not enable this source.")
+
+
 def source_url(value, source, *, posting=False):
     try:
         p = urlsplit(value)
         host = (p.hostname or "").removeprefix("www.")
         expected = HOSTS[source].removeprefix("www.")
-        valid = (p.scheme == "https" and host == expected and not p.username
+        api_reference = source == "joywork" and not posting and p.hostname == "api.joywork.vn" and p.path == "/api/jobs"
+        valid = (p.scheme == "https" and (host == expected or api_reference) and not p.username
                  and not p.password and p.port in (None, 443))
     except (ValueError, TypeError):
         valid = False
@@ -285,6 +299,8 @@ def record(data, source, retrieval):
 
 
 def schema_record(data, source, url, retrieval):
+    if not isinstance(data.get("description"), str) or not data["description"].strip():
+        raise Failure("BAD_RECORD", "JobPosting needs a description")
     org = data.get("hiringOrganization", {})
     locations = data.get("jobLocation", [])
     if isinstance(locations, dict):
@@ -296,7 +312,7 @@ def schema_record(data, source, url, retrieval):
             parts.extend(str(address[k]) for k in ("addressLocality", "addressRegion", "addressCountry")
                          if isinstance(address.get(k), str))
     result = record({"title": data.get("title"), "company": org.get("name") if isinstance(org, dict) else None,
-                   "description": data.get("description"), "description_html": True,
+                   "description": "\n".join(str(data[k]) for k in ("description", "responsibilities", "skills", "qualifications", "jobBenefits") if data.get(k)), "description_html": True,
                    "url": url, "location": ", ".join(dict.fromkeys(parts)) or None,
                    "date": data.get("datePosted"), "deadline": data.get("validThrough")}, source, retrieval)
     salary = data.get("baseSalary")
@@ -315,6 +331,153 @@ def schema_record(data, source, url, retrieval):
 def fold(value):
     value = unicodedata.normalize("NFKD", value.lower().replace("đ", "d"))
     return " ".join("".join(c for c in value if not unicodedata.combining(c)).split())
+
+
+CATEGORIES = {"it": ("it-phan-mem", 8), "marketing": ("marketing", 12)}
+
+
+def next_api(markup):
+    doc = Document(markup)
+    nodes = [n for n in doc.root.all() if n.tag == "script" and n.attrs.get("id") == "__NEXT_DATA__"]
+    try:
+        raw = "".join(c for c in nodes[0].children if isinstance(c, str))
+        return json.loads(raw)["props"]["initialState"]["api"]
+    except (IndexError, KeyError, TypeError, ValueError) as exc:
+        raise Failure("PARSE_CHANGED", "Missing Vieclam24h public initial state") from exc
+
+
+def vieclam_search(markup, category):
+    try:
+        data = next_api(markup)["getJobList"]["data"]
+        items = data["items"]
+        if not isinstance(items, list) or not isinstance(data["total_items"], int):
+            raise TypeError()
+        links = {}
+        for node in Document(markup).root.all(visible=True):
+            href = node.attrs.get("href", "") if node.tag == "a" else ""
+            match = re.search(r"id(\d+)\.html", href)
+            if match:
+                links[match[1]] = source_url(urljoin("https://vieclam24h.vn", href), "vieclam24h", posting=True).split("?")[0]
+        jobs = []
+        for row in items:
+            if CATEGORIES[category][1] not in row["occupation_ids_main"]:
+                raise Failure("FILTER_CHANGED", "Vieclam24h returned an unexpected occupation")
+            title = clean(row["title"])[0]
+            company = clean(row["employer_info"]["name"])[0]
+            url = links[str(row["id"])]
+            if not title or not company:
+                raise TypeError()
+            jobs.append({"id": str(row["id"]), "title": title, "company": company, "url": url,
+                         "location": None, "date": None, "portal": "vieclam24h", "source": "cli", "retrieval": "direct"})
+        if not jobs and data["total_items"]:
+            raise Failure("PARSE_CHANGED", "Nonempty Vieclam24h search has no usable jobs")
+        return jobs
+    except (KeyError, TypeError, ValueError) as exc:
+        raise Failure("PARSE_CHANGED", "Invalid Vieclam24h listing data or posting links") from exc
+
+
+def full_detail(url, source, cache):
+    markup = fetch(url, source, policy_cache=cache)
+    schemas = list(schema_jobs(markup))
+    if len(schemas) != 1:
+        raise Failure("PARSE_CHANGED", "Expected one complete JobPosting")
+    canonical = schemas[0].get("url")
+    if canonical and urlsplit(source_url(canonical, source, posting=True)).path != urlsplit(url).path:
+        raise Failure("POSTING_MISMATCH", "Detail schema points to a different posting")
+    item = schema_record(schemas[0], source, url, "direct")
+    if source == "vieclam24h":
+        try:
+            row = next_api(markup)["jobDetailHiddenContact"]["data"]
+            if not re.search(r"id" + re.escape(str(row["id"])) + r"\.html$", urlsplit(url).path):
+                raise Failure("POSTING_MISMATCH", "Vieclam24h detail ID differs from the requested posting")
+            sections = [row.get(key) for key in ("job_requirement_html", "other_requirement_html")]
+            extra, verdict = clean("\n".join(s for s in sections if isinstance(s, str)), "html")
+            if not extra:
+                raise Failure("INCOMPLETE_DESCRIPTION", "Vieclam24h requirements are missing")
+            item["description"] += "\n\nRequirements:\n" + extra
+            if verdict != "posting_guard: clean":
+                item["guard"] += "; requirements: " + verdict
+        except (KeyError, TypeError) as exc:
+            raise Failure("PARSE_CHANGED", "Missing Vieclam24h requirements") from exc
+    if len(item["description"]) < 300:
+        raise Failure("INCOMPLETE_DESCRIPTION", "Description too short for verified collection")
+    return item
+
+
+def collect_source(source, query, *, limit=5, location=None, category=None, pages=1, scan_limit=10, seen=None, tracker=None):
+    require_enabled(source)
+    if source not in ("careerviet", "vieclam24h"):
+        raise Failure("UNSUPPORTED", "No full-description connector for this source")
+    if source == "vieclam24h" and category not in CATEGORIES:
+        raise Failure("CATEGORY_REQUIRED", "Vieclam24h requires --category it or marketing; keyword filtering is local")
+    cache, leads, errors, visited = {}, [], [], []
+    for page in range(1, (pages if source == "vieclam24h" else 1) + 1):
+        if source == "careerviet":
+            url = f"https://careerviet.vn/viec-lam/{quote(query.replace(' ', '-'), safe='')}-k-vi.html"
+        else:
+            slug, code = CATEGORIES[category]
+            url = f"https://vieclam24h.vn/viec-lam-{slug}-o{code}.html?page={page}"
+        markup = fetch(url, source, policy_cache=cache)
+        found = career_search(markup) if source == "careerviet" else vieclam_search(markup, category)
+        visited.append(page)
+        leads.extend(found)
+        if not found:
+            break
+    leads = list({j["url"]: j for j in leads}.values())
+    parsed_count = len(leads)
+    from scrape_state import select
+    leads, prefetch_dedup = select(leads, seen or {}, tracker or set())
+    collected, attempted, filtered = [], 0, 0
+    for lead in leads[:scan_limit]:
+        if len(collected) >= limit:
+            break
+        # CareerViet cards have locations; Vieclam24h locations need detail data.
+        if source == "careerviet" and location and fold(location) not in fold(lead.get("location") or ""):
+            filtered += 1
+            continue
+        attempted += 1
+        try:
+            item = full_detail(lead["url"], source, cache)
+            if item["availability"] == "expired_by_deadline":
+                filtered += 1
+                continue
+            if source == "vieclam24h" and not all(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", fold(item["title"] + " " + item["description"])) for term in fold(query).split()):
+                filtered += 1
+                continue
+            if location and fold(location) not in fold(item.get("location") or ""):
+                filtered += 1
+                continue
+            collected.append(item)
+        except (Failure, OSError, ValueError, subprocess.SubprocessError) as exc:
+            code = getattr(exc, "code", "IO_ERROR")
+            errors.append({"url": lead["url"], "code": code, "error": str(exc)})
+            if code in ("ACCESS_POLICY", "BLOCKED", "RATE_LIMITED", "TRANSPORT", "IO_ERROR"):
+                break
+    return collected, {"source": source, "query": query, "attempted": attempted, "errors": errors,
+                       "complete": not errors, "pages": visited, "filtered": filtered,
+                       "parsed_count": parsed_count, "scan_limit": scan_limit, "prefetch_deduplication": prefetch_dedup,
+                       "coverage": "Bounded search sample; CareerViet first page, Vieclam24h category pages with local keyword/location filtering"}
+
+
+def joy_references(query, limit=5):
+    # Explicit reference-only retrieval; no descriptions enter the ranking pool.
+    url = "https://api.joywork.vn/api/jobs?limit=" + str(limit) + "&page=1&q=" + quote(query, safe="")
+    try:
+        data = json.loads(fetch(url, "joywork", policy_cache={}))["data"]
+        rows = data["jobs"]
+        if not isinstance(rows, list) or not isinstance(data["pagination"]["total"], int):
+            raise TypeError()
+        refs = []
+        for row in rows:
+            slug, ident = row["slug"], row["id"]
+            if not isinstance(slug, str) or not isinstance(ident, str) or not re.fullmatch(r"[a-z0-9()_-]+", slug) or not re.fullmatch(r"[a-z0-9]+", ident):
+                raise TypeError()
+            refs.append({"title": clean(row["title"])[0], "company": clean(row["company"]["name"])[0],
+                         "url": source_url(f"https://joywork.vn/jobs/{slug}--{ident}", "joywork", posting=True),
+                         "portal": "joywork", "usage": "reference_only", "rankable": False})
+        return refs
+    except (KeyError, TypeError, ValueError) as exc:
+        raise Failure("PARSE_CHANGED", "Invalid JoyWork public search response") from exc
 
 
 def emit(results, **meta):
@@ -337,18 +500,24 @@ def main(argv=None):
     parser = Parser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True, parser_class=Parser)
     sub.add_parser("sources")
-    health = sub.add_parser("health")
-    health.add_argument("--source", choices=PROBES)
+    health = sub.add_parser("health", help="Check enabled sources only; --source explicitly probes one source, including disabled ones")
+    health.add_argument("--source", choices=PROBES, help="Explicitly probe this source, even if disabled; does not enable retrieval")
     search = sub.add_parser("search")
     search.add_argument("--source", choices=PROBES, required=True)
     search.add_argument("--query", "-q", required=True)
     search.add_argument("--location", "-l")
     search.add_argument("--limit", type=positive, default=20)
-    collect = sub.add_parser("collect", help="CareerViet first-page search plus full descriptions in one policy-checked run")
-    collect.add_argument("--source", choices=("careerviet",), default="careerviet")
+    collect = sub.add_parser("collect", help="Bounded CareerViet or Vieclam24h search plus full descriptions")
+    collect.add_argument("--source", choices=("careerviet", "vieclam24h"), default="careerviet")
     collect.add_argument("--query", "-q", required=True)
     collect.add_argument("--location", "-l")
     collect.add_argument("--limit", type=positive, default=5)
+    collect.add_argument("--category", choices=CATEGORIES)
+    collect.add_argument("--pages", type=positive, default=1)
+    collect.add_argument("--scan-limit", type=positive, default=10)
+    refs = sub.add_parser("references", help="Explicit JoyWork reference links only; excluded from AI ranking")
+    refs.add_argument("--query", "-q", required=True)
+    refs.add_argument("--limit", type=positive, default=5)
     detail = sub.add_parser("detail")
     detail.add_argument("--source", choices=PROBES, required=True)
     detail.add_argument("--url", required=True)
@@ -363,21 +532,42 @@ def main(argv=None):
             print(REGISTRY.read_text(encoding="utf-8"))
         elif args.command == "health":
             results = []
-            for source in ([args.source] if args.source else PROBES):
-                entry = {"source": source, "url": PROBES[source], "checked_at": datetime.now(timezone.utc).isoformat()}
+            selected = [args.source] if args.source else [source for source in SOURCES if enabled(source)]
+            skipped = [] if args.source else [source for source in SOURCES if not enabled(source)]
+            for source in selected:
+                entry = {"source": source, "url": PROBES[source], "enabled": enabled(source),
+                         "explicit_probe": args.source is not None,
+                         "checked_at": datetime.now(timezone.utc).isoformat()}
                 try:
                     markup = fetch(PROBES[source], source)
                     if source == "careerviet":
                         jobs = career_search(markup)
                         entry.update(status="search_parsed", count=len(jobs), detail_verified=False)
+                    elif source == "vieclam24h":
+                        jobs = vieclam_search(markup, "it")
+                        entry.update(status="category_parsed", count=len(jobs), detail_verified=False)
                     else:
                         entry.update(status="accessible_unverified", detail_verified=False,
                                      note="Page reachable; query semantics and extraction not verified")
                 except Failure as exc:
                     entry.update(status="unavailable", code=exc.code, error=str(exc))
                 results.append(entry)
-            emit(results, coverage="Point-in-time access and search checks; not a reliability guarantee")
-        elif args.command in ("search", "collect"):
+            emit(results, skipped_disabled=skipped,
+                 coverage="Point-in-time access and search checks; not a reliability guarantee")
+        elif args.command == "references":
+            if not args.query.strip():
+                raise Failure("USAGE", "Query must not be empty")
+            emit(joy_references(args.query.strip(), args.limit), source="joywork", usage="reference_only", rankable=False)
+        elif args.command == "collect":
+            if not args.query.strip() or args.pages > 3:
+                raise Failure("USAGE", "Provide a nonempty query and at most three pages")
+            jobs, meta = collect_source(args.source, args.query.strip(), limit=args.limit,
+                                        location=args.location, category=args.category,
+                                        pages=args.pages, scan_limit=args.scan_limit)
+            emit(jobs, **meta)
+            return 0 if meta["complete"] else 1
+        elif args.command == "search":
+            require_enabled(args.source)
             query = args.query.strip()
             if not query:
                 raise Failure("USAGE", "Query must not be empty")
@@ -389,37 +579,24 @@ def main(argv=None):
                 url = f"https://www.topcv.vn/tim-viec-lam-{quote(query.replace(' ', '-'), safe='')}"
             else:
                 url = f"https://vn.indeed.com/jobs?q={quote(query, safe='')}&l=Vietnam"
-            policy_cache = {} if args.command == "collect" else None
-            markup = fetch(url, args.source, policy_cache=policy_cache) if policy_cache is not None else fetch(url, args.source)
+            markup = fetch(url, args.source)
             if args.source != "careerviet":
                 raise Failure("UNSUPPORTED", "Page accessible, but search parser is not verified; use import")
             jobs = career_search(markup)
             parsed_count = len(jobs)
             if args.location:
                 jobs = [j for j in jobs if fold(args.location) in fold(j["location"] or "")]
-            if args.command == "collect":
-                collected, errors = [], []
-                for lead in jobs[:args.limit]:
-                    try:
-                        schemas = list(schema_jobs(fetch(lead["url"], args.source, policy_cache=policy_cache)))
-                        if len(schemas) != 1:
-                            raise Failure("PARSE_CHANGED", "Expected one complete JobPosting")
-                        item = schema_record(schemas[0], args.source, lead["url"], "direct")
-                        if len(item["description"]) < 300:
-                            raise Failure("INCOMPLETE_DESCRIPTION", "Description too short for verified collection")
-                        collected.append(item)
-                    except Failure as exc:
-                        errors.append({"url": lead["url"], "code": exc.code, "error": str(exc)})
-                emit(collected, source=args.source, query=query, page=1, attempted=min(len(jobs), args.limit),
-                     errors=errors, complete=not errors, coverage="First page only; full schema descriptions for successful records")
-                return 0 if collected and not errors else 1
             emit(jobs[:args.limit], source=args.source, query=query, page=1,
                  parsed_count=parsed_count, truncated=len(jobs) > args.limit,
                  coverage="First page only; further pages and total coverage unverified",
                  warnings=["Location filtering is client-side on the retrieved page; no personal fit scoring performed",
                            "Search card dates are unknown; use detail for authoritative dates"])
         elif args.command == "detail":
+            require_enabled(args.source)
             url = source_url(args.url, args.source, posting=True)
+            if args.source == "vieclam24h":
+                emit([full_detail(url, args.source, {})])
+                return 0
             schemas = list(schema_jobs(fetch(url, args.source)))
             if len(schemas) != 1:
                 raise Failure("PARSE_CHANGED", "Expected exactly one JobPosting; import visible text instead")

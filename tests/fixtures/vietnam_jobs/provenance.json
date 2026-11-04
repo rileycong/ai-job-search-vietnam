@@ -2,5 +2,10 @@
   "captured": "2026-11-04",
   "search_url": "https://careerviet.vn/viec-lam/python-k-vi.html",
   "detail_url": "https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html",
-  "notes": "Two actual search card fragments; detail schema reduced to tested fields and description excerpt. Public employer data only. Offline fixtures do not establish live availability."
+  "notes": "Two actual search card fragments; detail schema reduced to tested fields and description excerpt. Public employer data only. Offline fixtures do not establish live availability.",
+  "vieclam24h": {
+    "captured": "2026-11-04",
+    "search_url": "https://vieclam24h.vn/viec-lam-it-phan-mem-o8.html",
+    "notes": "Reduced public category listing state and links; separate public insurance-job detail schema and requirement fields. Contacts/staff fields excluded; detail URL replaced with a test path retaining the job ID. These fixtures establish parsing, not live availability."
+  }
 }

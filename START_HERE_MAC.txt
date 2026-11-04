@@ -99,16 +99,30 @@ You can write your prompts and answers in Vietnamese.
 
 Paste this into Gemini:
 
-    Find up to five jobs on CareerViet using my saved profile and preferences.
-    Use the full-description collection workflow and rank the jobs by fit.
+    Search the enabled Vietnamese boards using my saved profile and preferences.
+    Use the shared multi-board collection workflow, up to five jobs per board.
+    Use Vieclam24h only if my preferences fit its IT or marketing category;
+    otherwise use CareerViet alone and explain the coverage limit. Ask me if
+    the category is unclear. Combine full descriptions, remove duplicates,
+    and rank the jobs by fit.
     Show the title, company, location, salary if available, source URL,
     reasons for the match, and important gaps. Report failed retrievals and
     unknown details honestly. Save the results and avoid duplicates.
     Do not prepare applications until I choose a job.
 
-CareerViet is the currently tested direct source. Search covers the first
-results page; it does not promise every available job. If another website
-is blocked, you can paste a complete posting for evaluation instead.
+CareerViet and Vieclam24h are the enabled full-description sources. Coverage
+is limited to the configured pages and scan budget. Failed sources are reported
+while other results are retained. Blocked and unverified boards are skipped;
+probe them only when you ask. You can paste a complete posting from any board.
+If you also want JoyWork links, ask:
+
+    Include JoyWork reference links separately for manual review. Keep them
+    out of the ranked shortlist and application-PDF workflow.
+
+The agent uses tools/vietnam_search.py for the combined search. A partial run
+keeps results from working sources. It should tell you which sources failed,
+which were skipped, and how many jobs were scanned. No matches in a limited
+scan does not mean there are no jobs on the website.
 
 6. GENERATE AN APPLICATION
 
@@ -160,7 +174,8 @@ IF SOMETHING GOES WRONG
   instructions. For missing PDF tools, ask Gemini to run doctor again.
 - Missing Python packages: use .venv/bin/python for project commands.
 - HTTP 403 or unavailable source: this is an access failure, not zero jobs.
-  Use CareerViet when available, or provide the complete posting yourself.
+  Keep results from other working sources, or provide a complete posting.
+  Do not repeatedly retry a blocked source.
 - Missing package, glyph, or PDF error: ask Gemini to read the compile log,
   fix the specific issue, and run the checks again.
 - No independent reviewer or image inspection: review the PDFs yourself;
