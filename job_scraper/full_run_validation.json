@@ -1,0 +1,20 @@
+{
+  "result": "PASS for dummy-data CareerViet pipeline",
+  "full_descriptions": 5,
+  "independently_scored": 5,
+  "cv_pages": 2,
+  "cover_pages": 1,
+  "mechanical_layout": "PASS for both PDFs using real Poppler 26.05 pdftotext",
+  "visual_review": "All three pages inspected; final cover re-rendered after header font update. No clipping, orphaned headings, missing Vietnamese glyphs; signature visible.",
+  "repository_tests": {
+    "run": 922,
+    "failures": 0,
+    "skipped": 25
+  },
+  "site_limits": "TopCV still returns HTTP 403; CareerViet first page only; future availability not guaranteed",
+  "artifacts_sha256": {
+    "cv": "16214d3829c31cb8ab2a1a79a3a03a0ee49805d9dcd8e96ef6cc29d7ec8c0d62",
+    "cover": "10c3a91c96c47fc66d91d75a433cf848e09eaf52c4ffe6406771eb459a49b785"
+  },
+  "report": "reports/dummy-full-run-fixed/TEST_REPORT.md"
+}

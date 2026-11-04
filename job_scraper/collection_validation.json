@@ -1,0 +1,124 @@
+{
+  "checked_at": "2026-11-04",
+  "method": "Two independent collect invocations, each search plus five full descriptions; in-memory robots policy reused per origin for at most 300 seconds; every path evaluated",
+  "runs": [
+    {
+      "meta": {
+        "count": 5,
+        "source": "careerviet",
+        "query": "python",
+        "page": 1,
+        "attempted": 5,
+        "errors": [],
+        "complete": true,
+        "coverage": "First page only; full schema descriptions for successful records"
+      },
+      "records": [
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ai-software-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450888.35C8B92A.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ky-su-robotic.35C894F7.html",
+          "description_characters": 1759,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/risk-modeling-senior-executive.35C88879.html",
+          "description_characters": 2936,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/software-engineer.35C8BA45.html",
+          "description_characters": 3197,
+          "guard": "posting_guard: clean"
+        }
+      ]
+    },
+    {
+      "meta": {
+        "count": 5,
+        "source": "careerviet",
+        "query": "python",
+        "page": 1,
+        "attempted": 5,
+        "errors": [],
+        "complete": true,
+        "coverage": "First page only; full schema descriptions for successful records"
+      },
+      "records": [
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ai-software-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450888.35C8B92A.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ky-su-robotic.35C894F7.html",
+          "description_characters": 1759,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/risk-modeling-senior-executive.35C88879.html",
+          "description_characters": 2936,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/software-engineer.35C8BA45.html",
+          "description_characters": 3197,
+          "guard": "posting_guard: clean"
+        }
+      ]
+    },
+    {
+      "runtime": "Codex CLI full acceptance run",
+      "meta": {
+        "count": 5,
+        "source": "careerviet",
+        "query": "python",
+        "page": 1,
+        "attempted": 5,
+        "errors": [],
+        "complete": true,
+        "coverage": "First page only; full schema descriptions for successful records"
+      },
+      "records": [
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ai-software-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450888.35C8B92A.html",
+          "description_characters": 3478,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/ky-su-robotic.35C894F7.html",
+          "description_characters": 1759,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/risk-modeling-senior-executive.35C88879.html",
+          "description_characters": 2936,
+          "guard": "posting_guard: clean"
+        },
+        {
+          "url": "https://careerviet.vn/vi/tim-viec-lam/software-engineer.35C8BA45.html",
+          "description_characters": 3197,
+          "guard": "posting_guard: clean"
+        }
+      ]
+    }
+  ]
+}

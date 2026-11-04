@@ -1,0 +1,91 @@
+{
+  "checked_at": "2026-11-04T01:12:13.199298+00:00",
+  "environment": "Local public GET requests; no login, API keys or proxy service",
+  "sources": [
+    {
+      "source": "topcv",
+      "url": "https://www.topcv.vn/tim-viec-lam-python",
+      "status": "unavailable",
+      "code": "BLOCKED",
+      "error": "HTTP 403: access blocked, not zero results"
+    },
+    {
+      "source": "indeed",
+      "url": "https://vn.indeed.com/jobs?q=python&l=Vietnam",
+      "status": "unavailable",
+      "code": "BLOCKED",
+      "error": "HTTP 403: access blocked, not zero results"
+    },
+    {
+      "source": "vietnamworks",
+      "url": "https://www.vietnamworks.com/python-kw",
+      "status": "accessible_unverified",
+      "note": "Page reachable; search and detail not verified"
+    },
+    {
+      "source": "joywork",
+      "url": "https://joywork.vn/jobs",
+      "status": "accessible_unverified",
+      "note": "Page reachable; search and detail not verified"
+    },
+    {
+      "source": "jobsgo",
+      "url": "https://jobsgo.vn/viec-lam.html?keyword=python",
+      "status": "unavailable",
+      "code": "ACCESS_POLICY",
+      "error": "UNCONFIRMED (HTTP 403) - do not retry, go to step 3"
+    },
+    {
+      "source": "careerviet",
+      "url": "https://careerviet.vn/viec-lam/python-k-vi.html",
+      "status": "search_parsed",
+      "count": 50
+    },
+    {
+      "source": "vieclam24h",
+      "url": "https://vieclam24h.vn/tim-kiem-viec-lam-nhanh?keyword=python",
+      "status": "accessible_unverified",
+      "note": "Page reachable; search and detail not verified"
+    }
+  ],
+  "career_smoke": [
+    {
+      "query": "python",
+      "status": "passed",
+      "count": 50,
+      "sample_url": "https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html",
+      "title": "Agentic Engineer (Python/Go/C/C++ Backend & AI Agents) - Khối Công nghệ thông tin (2026TD450887)",
+      "description_characters": 3478,
+      "date": "2026-10-28",
+      "deadline": "2026-11-21"
+    },
+    {
+      "query": "marketing",
+      "status": "passed",
+      "count": 50,
+      "sample_url": "https://careerviet.vn/vi/tim-viec-lam/truong-nhom-marketing-project-marketing.35C89FD5.html",
+      "title": "Trưởng nhóm Marketing/Project Marketing",
+      "description_characters": 1684,
+      "date": "2026-10-09",
+      "deadline": "2026-11-08"
+    },
+    {
+      "query": "ke-toan",
+      "status": "passed",
+      "count": 50,
+      "sample_url": "https://careerviet.vn/vi/tim-viec-lam/ke-toan.35C83573.html",
+      "title": "Kế Toán",
+      "description_characters": 1513,
+      "date": "2026-10-13",
+      "deadline": "2026-11-12"
+    }
+  ],
+  "cli_smoke": {
+    "checked_at": "2026-11-04T01:14:56.878524+00:00",
+    "command": "python3 tools/vietnam_jobs.py search --source careerviet --query python --location \"Hà Nội\" --limit 3",
+    "exit_code": 1,
+    "code": "ACCESS_POLICY",
+    "error": "UNCONFIRMED (HTTP 200 but the body is not a robots.txt) - do not retry, go to step 3",
+    "conclusion": "Earlier search/detail checks passed, but a later robots response was unreadable. Direct access is intermittent in this environment; long-term reliability is not established."
+  }
+}

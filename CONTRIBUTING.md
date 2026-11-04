@@ -1,5 +1,12 @@
 # Contributing
 
+> This repository is the Vietnamese/Gemini CLI/Codex adaptation of
+> [ai-job-search-dev/ai-job-search](https://github.com/ai-job-search-dev/ai-job-search).
+> The policy below is retained from the original project and describes what its
+> maintainers accept upstream. Vietnamese connectors and runtime adaptations
+> belong in this repository; direct adaptation-specific issues and changes here,
+> rather than treating the upstream maintainers as responsible for them.
+
 Thanks for considering a contribution! This repo has a deliberate, narrow philosophy, and most declined PRs are well-executed work that simply didn't know about it. Read this first; it will save you effort and tell you where your work will land best.
 
 ## The one rule everything follows from

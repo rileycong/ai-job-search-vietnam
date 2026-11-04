@@ -1,3 +1,50 @@
+# AI Job Search Vietnam
+
+A Vietnamese job-search adaptation for **Gemini CLI and Codex**, built on
+[ai-job-search-dev/ai-job-search](https://github.com/ai-job-search-dev/ai-job-search)
+by **Mads Lorentzen**. The original project provides the candidate-profile,
+evaluation, CV/cover-letter, interview, and tracking methodology. This repository
+extends that framework; it is not the original project's official release.
+
+[![CI](https://github.com/rileycong/ai-job-search-vietnam/actions/workflows/ci.yml/badge.svg)](https://github.com/rileycong/ai-job-search-vietnam/actions/workflows/ci.yml)
+
+**Start here:** [macOS setup and copyable Gemini prompts](START_HERE_MAC.txt).
+Use your own private working copy before adding a real CV or personal details.
+
+## What this adaptation adds
+
+- Shared Gemini CLI/Codex entry instructions and explicit substitutions for
+  Claude-specific tools, scratch directories, and unavailable reviewers.
+- A CareerViet collector that retrieves full public job descriptions, checks
+  source access rules, reports partial failures, and preserves provenance.
+- A seven-board Vietnamese source registry and
+  [integration research](job_scraper/research-vietnam-job-sources.md), with
+  honest blocked/unverified states and a posting-text import fallback.
+- Provider-independent Python setup, readiness checks, saved-session status,
+  and stock-template PDF compilation, extraction, layout checks, and rendering.
+- Updated Vietnamese-capable fonts, retaining the required font licenses.
+- Offline regression coverage and recorded Codex CLI acceptance checks using
+  fictional candidate data. Gemini CLI has shared instructions but has not yet
+  been independently tested end to end here.
+
+CareerViet currently covers the first results page. TopCV and several other
+boards are blocked or unverified; this is not a universal scraper and does not
+automatically submit applications. Repeated successful checks do not guarantee
+future website availability.
+
+## Credit and licensing
+
+The original framework and its Git history are retained. See the
+[upstream project](https://github.com/ai-job-search-dev/ai-job-search), its
+[contribution policy](https://github.com/ai-job-search-dev/ai-job-search/blob/master/CONTRIBUTING.md),
+and the preserved [MIT license](LICENSE), including Mads Lorentzen's copyright.
+The Lato and Raleway-derived font assets have separate SIL Open Font Licenses
+and source records in their respective `cover_letters/OpenFonts/fonts/` folders.
+The material below includes the original framework's documentation; its
+first-person career story and support links belong to the original author.
+
+---
+
 <p align="center">
   <img src="assets/readme/hero.svg" alt="AI Job Search. Pip the courier bird carries an application along a flight path to its destination. The job search that runs on your machine." width="100%">
 </p>
@@ -37,15 +84,17 @@
 >
 > This project has **no affiliated cryptocurrency, token, or paid sponsorship program**. Anything claiming otherwise is unauthorized and should be treated as a scam. The only ways to support the project are the Ko-fi link below and contributing on GitHub.
 
-## Does it actually work?
+## Original project's results — Mads Lorentzen
 
-I'm a geophysicist by training. When my position was cut in late 2025, I built this framework to run my own job search - the same `/scrape`, `/apply`, and `/interview` workflow in this repo, used weekly, on my own career. I was upfront about it with every employer I spoke to, and instead of counting against me, it usually sparked a genuine technical conversation.
+The original author describes his results as follows:
+
+> I'm a geophysicist by training. When my position was cut in late 2025, I built this framework to run my own job search - the same `/scrape`, `/apply`, and `/interview` workflow in this repo, used weekly, on my own career. I was upfront about it with every employer I spoke to, and instead of counting against me, it usually sparked a genuine technical conversation.
 
 <p align="center">
   <img src="assets/readme/letters.svg" alt="69 envelopes for 69 tailored applications. 20 of them light up as first interviews, and one is sealed as the signed contract." width="100%">
 </p>
 
-Sixty-nine tailored applications, twenty first interviews, and one signed contract later, I started as an AI engineer in June 2026. People kept asking whether this actually works. It got me hired. Now it's yours.
+> Sixty-nine tailored applications, twenty first interviews, and one signed contract later, I started as an AI engineer in June 2026. People kept asking whether this actually works. It got me hired. Now it's yours.
 
 *The longer version, including the full application funnel, is on [LinkedIn](https://www.linkedin.com/in/mads-lorentzen/).*
 
@@ -59,6 +108,101 @@ Sixty-nine tailored applications, twenty first interviews, and one signed contra
     <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Buy me a coffee at ko-fi.com" height="40">
   </a>
 </p>
+
+## Vietnamese MVP with Gemini CLI or Codex
+
+For a fresh installation or a restarted session:
+
+```bash
+python3 tools/job_runtime.py bootstrap
+.venv/bin/python tools/job_runtime.py doctor
+.venv/bin/python tools/job_runtime.py status
+```
+
+On Windows use `python` for bootstrap and `.venv\Scripts\python.exe` afterward.
+Use Python 3.10+. Bootstrap prepares
+only Python PDF dependencies; doctor lists any missing TeX/Poppler tools and
+explains how to install them. It also identifies tools supplied by an agent app
+so they are not mistaken for dependencies installed on your cousin's machine.
+Keep the candidate's working copy private: profile files are tracked.
+
+The [shared session procedure](VIETNAM_WORKFLOW.md#start-or-resume-a-session)
+covers onboarding, restarting, scratch files and unavailable reviewer/image
+capabilities. Drafting can continue with explicit human-review requirements;
+the tool never pretends an unavailable check passed.
+
+This adaptation adds a shared Python retrieval tool and agent entry
+instructions. Open this repository in Gemini CLI or Codex and ask:
+
+> Read the Vietnamese workflow, check source access, then help me search CareerViet for jobs matching my preferences. Report any blocked or incomplete sources honestly.
+
+Gemini loads `GEMINI.md`, which imports `AGENTS.md`; both agents follow
+[the same workflow](VIETNAM_WORKFLOW.md). Claude slash commands are
+not installed in these other runtimes. Existing profiles and methodology files
+retain their upstream paths to avoid duplicate workflow copies.
+
+With Python 3.10+ and curl available:
+
+```bash
+python3 tools/vietnam_jobs.py sources
+python3 tools/vietnam_jobs.py health
+python3 tools/vietnam_jobs.py collect --query python --limit 5
+python3 tools/vietnam_jobs.py search --source topcv --query python --limit 5
+python3 tools/vietnam_jobs.py search --source careerviet --query python --location "Hà Nội" --limit 5
+```
+
+TopCV direct requests currently return 403 in this environment. Its supported
+fallback is importing actual posting text or saved JobPosting HTML; the tool
+reports blocked access as an error. CareerViet has a first-page search adapter
+and structured posting-detail retrieval. The other five sources currently have
+access probes, not verified search adapters. These commands require no Bun or
+model API key. Search results are unranked until the host agent evaluates them
+against your profile. No automatic application submission is included.
+
+CareerViet passed three live search/detail checks, but a later CLI check stopped
+on an unreadable robots.txt response. Direct access is intermittent in this
+environment; no board has established long-term reliability. The tool stops
+when access rules cannot be confirmed. See the timestamped
+[validation results](job_scraper/vietnam_checks.json) for both outcomes.
+
+For full descriptions, prefer `collect` over separate search/detail invocations.
+It reuses the actual validated robots policy within a run (maximum five minutes),
+checks every path, and reports failed descriptions separately. Repeated live
+five-job collections passed; see [collection checks](job_scraper/collection_validation.json).
+This reduces repeated policy requests; it does not bypass an unreadable or
+restrictive policy and does not guarantee future site availability.
+
+PDF generation uses the stock LuaLaTeX/XeLaTeX templates. A portable TinyTeX
+installation can be placed under `.local-tools/TinyTeX/` (ignored by Git; not
+included in this repository). If installed there on macOS, enable it with:
+
+```bash
+export PATH="$PWD/.local-tools/TinyTeX/bin/universal-darwin:$PATH"
+```
+
+For other machines follow the TeX setup in `SETUP.md`. The bundled cover-letter
+font assets now include Vietnamese glyphs; their source and license are recorded
+alongside the font files. Static derivatives use the internal family name
+Job Search Sans while preserving template-compatible filenames.
+
+See [the source registry](job_scraper/vietnam_sources.json) for the full list.
+Codex CLI passed a live search/detail smoke test with network access enabled:
+TopCV returned a clear 403 error, then CareerViet returned three listings and a
+full job description. Offline HTML import also passed. The initial read-only
+test could not resolve website addresses, so network failures must be separated
+from website blocks. See [Codex test results](job_scraper/codex_smoke.json).
+
+For a session with live shell networking, launch Codex using:
+
+```bash
+codex --sandbox workspace-write -c sandbox_workspace_write.network_access=true
+```
+
+This is a per-session setting; see OpenAI's
+[network access documentation](https://learn.chatgpt.com/docs/agent-approvals-security#network-access).
+Gemini CLI is not installed in the development environment, so live Gemini
+agent execution remains to be verified; the shared retrieval tool is tested
+independently of either agent.
 
 ## What this is
 

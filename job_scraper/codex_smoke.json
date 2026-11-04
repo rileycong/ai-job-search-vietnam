@@ -1,0 +1,95 @@
+{
+  "checked_at": "2026-11-04T01:26:42.450303+00:00",
+  "runtime": "Codex CLI",
+  "scope": "Discovery, live search/detail, offline import. No personal ranking or application submission tested.",
+  "runs": [
+    {
+      "network_enabled": false,
+      "sandbox": "read-only",
+      "commands": [
+        {
+          "command": "/bin/zsh -c 'PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py sources'",
+          "exit_code": 0,
+          "note": "macOS launcher output mixed with JSON; see temporary transcript"
+        },
+        {
+          "command": "/bin/zsh -c 'PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py search --source topcv --query python --limit 3'",
+          "exit_code": 1,
+          "note": "macOS launcher output mixed with JSON; see temporary transcript"
+        },
+        {
+          "command": "/bin/zsh -c 'PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py search --source careerviet --query python --limit 3'",
+          "exit_code": 1,
+          "note": "macOS launcher output mixed with JSON; see temporary transcript"
+        },
+        {
+          "command": "/bin/zsh -c \"PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py import --source careerviet --input tests/fixtures/vietnam_jobs/careerviet-detail.html --html --url 'https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html'\"",
+          "exit_code": 0,
+          "note": "macOS launcher output mixed with JSON; see temporary transcript"
+        }
+      ]
+    },
+    {
+      "network_enabled": true,
+      "sandbox": "workspace-write",
+      "commands": [
+        {
+          "command": "/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py search --source topcv --query python --limit 3'",
+          "exit_code": 1,
+          "error": "HTTP 403: access blocked, not zero results",
+          "code": "BLOCKED"
+        },
+        {
+          "command": "/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py search --source careerviet --query python --limit 3'",
+          "exit_code": 0,
+          "meta": {
+            "count": 3,
+            "source": "careerviet",
+            "query": "python",
+            "page": 1,
+            "parsed_count": 50,
+            "truncated": true,
+            "coverage": "First page only; further pages and total coverage unverified",
+            "warnings": [
+              "Location filtering is client-side on the retrieved page; no personal fit scoring performed",
+              "Search card dates are unknown; use detail for authoritative dates"
+            ]
+          },
+          "result_count": 3,
+          "sample": {
+            "title": "Agentic Engineer (Python/Go/C/C++ Backend & AI Agents) - Khối Công nghệ thông tin (2026TD450887)",
+            "company": "Ngân Hàng TMCP Quân Đội",
+            "location": "Hà Nội",
+            "date": null,
+            "salary": "Lương: 20 - 50 Triệu VND",
+            "retrieval": "direct"
+          }
+        },
+        {
+          "command": "/bin/zsh -lc \"PYTHONDONTWRITEBYTECODE=1 python3 tools/vietnam_jobs.py detail --source careerviet --url 'https://careerviet.vn/vi/tim-viec-lam/agentic-engineer-python-go-c-c-backend-ai-agents-khoi-cong-nghe-thong-tin-2026td450887.35C8B922.html'\"",
+          "exit_code": 0,
+          "meta": {
+            "count": 1
+          },
+          "result_count": 1,
+          "sample": {
+            "title": "Agentic Engineer (Python/Go/C/C++ Backend & AI Agents) - Khối Công nghệ thông tin (2026TD450887)",
+            "company": "Ngân Hàng TMCP Quân Đội",
+            "location": "Hà Nội, VN",
+            "date": "2026-10-28",
+            "deadline": "2026-11-21",
+            "salary": {
+              "currency": "VND",
+              "min": 20000000,
+              "max": 50000000,
+              "period": "MONTH"
+            },
+            "guard": "posting_guard: clean",
+            "retrieval": "direct",
+            "description_characters": 3478
+          }
+        }
+      ]
+    }
+  ]
+}

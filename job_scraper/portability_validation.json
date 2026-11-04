@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-11-04T02:12:47.235659+00:00",
+  "runtime": "Codex CLI fresh offline session; Gemini uses the same shared tools and pointers but has not been executed here",
+  "bootstrap": "PASS: project-local Python environment and pinned pypdf installed",
+  "doctor": "PASS: correctly distinguishes search readiness, PDF readiness and agent-bundled tools; stripped PATH reports missing renderer",
+  "compile": "PASS: two-page CV, one-page cover; canonical text/page/layout checks and rendering exit zero",
+  "resume": {
+    "result": "PASS",
+    "saved_jobs": 5,
+    "saved_drafts": 1,
+    "next_step": "review_existing_drafts",
+    "protected_files_changed": [],
+    "network_requests": false
+  },
+  "regression_tests": {
+    "run": 930,
+    "failures": 0,
+    "skipped": 25
+  },
+  "scope_limits": [
+    "No live Gemini session tested",
+    "TeX and Poppler installation remains machine-specific and explicitly diagnosed",
+    "Mechanical verification does not replace visual review or claim grounding"
+  ],
+  "evidence_directory": "reports/agent-portability"
+}

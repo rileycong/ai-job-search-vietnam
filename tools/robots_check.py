@@ -27,7 +27,7 @@ Usage:  python3 tools/robots_check.py <url>
 Exit 0 = the retry may proceed. Exit 1 = do not retry; go to escalation step 3.
 """
 
-import re, subprocess, sys
+import re, subprocess, sys, time
 from urllib.parse import urlsplit, unquote
 
 BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -175,7 +175,7 @@ def allowed(text, agent, path):
             best_len, best_allow = n, is_allow      # ties -> Disallow wins (cautious)
     return True if best_len < 0 else best_allow
 
-def gate(url):
+def gate(url, *, policy_cache=None):
     parts = urlsplit(url)  # urlsplit lower-cases the scheme
     # Only http(s) with a host is a page this tool can have a policy for; any
     # other input fails closed before curl is asked anything.
@@ -186,14 +186,21 @@ def gate(url):
     path = unquote(parts.path) or '/'
     if parts.query:
         path += '?' + unquote(parts.query)
-    robots = f'{parts.scheme}://{parts.netloc}/robots.txt'
+    origin = f'{parts.scheme}://{parts.netloc}'
+    robots = origin + '/robots.txt'
     body, last = None, 'no attempt'
-    for ua in ('Claude-User', BROWSER):
+    if policy_cache is not None and origin in policy_cache:
+        fetched_at, cached_body = policy_cache[origin]
+        if 0 <= time.monotonic() - fetched_at < 300:
+            body = cached_body
+    for ua in (() if body is not None else ('Claude-User', BROWSER)):
         try:
             text, code = _fetch(robots, ua)
         except Exception as e:
             last = type(e).__name__; continue
         if code == 404:
+            if policy_cache is not None:
+                policy_cache[origin] = (time.monotonic(), '')
             return 0, 'ALLOWED - no robots.txt published'
         if code == 200:
             if not is_robots_body(text):
@@ -206,6 +213,12 @@ def gate(url):
         last = 'HTTP %d' % code
     if body is None:
         return 1, 'UNCONFIRMED (%s) - do not retry, go to step 3' % last
+    if policy_cache is not None:
+        # Keep the original timestamp on reuse: repeated calls cannot extend
+        # the five-minute lifetime. Callers own this in-memory, per-run cache.
+        prior = policy_cache.get(origin)
+        if prior is None or not 0 <= time.monotonic() - prior[0] < 300:
+            policy_cache[origin] = (time.monotonic(), body)
     for a in ('Claude-User', '*'):
         if not allowed(body, a, path):
             return 1, f'DISALLOWED for {a} - do not retry, go to step 3'

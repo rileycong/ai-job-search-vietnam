@@ -1,0 +1,18 @@
+{
+  "source": "https://github.com/google/fonts/tree/main/ofl/raleway",
+  "download": "https://raw.githubusercontent.com/google/fonts/main/ofl/raleway/Raleway%5Bwght%5D.ttf",
+  "sha256": "8bbcc3eb8275c388f4bcd998832f8a4b943eadbaf6a595205312774b5951aefb",
+  "license": "SIL Open Font License 1.1; see OFL.txt",
+  "notes": "Static OpenType instances derived from official variable Raleway. Internal family renamed Job Search Sans to respect the reserved font name; original asset filenames retained for template compatibility. Vietnamese glyph coverage verified.",
+  "weights": {
+    "Thin": 100,
+    "ExtraLight": 200,
+    "Light": 300,
+    "Regular": 400,
+    "Medium": 500,
+    "SemiBold": 600,
+    "Bold": 700,
+    "ExtraBold": 800,
+    "Heavy": 900
+  }
+}

@@ -1,0 +1,170 @@
+GEMINI JOB SEARCH — macOS QUICK START
+
+Use Terminal for commands and Gemini CLI for the prompts below.
+The first setup is one-time work. Later sessions start at step 8.
+
+1. GET YOUR OWN JOB-SEARCH FOLDER
+
+Get the adapted project from:
+https://github.com/rileycong/ai-job-search-vietnam
+
+Choose Code > Download ZIP, unzip it, rename the extracted folder to
+ai-job-search, and move it into Documents. If this repository is private,
+first accept your invitation and sign in to GitHub. Use this adapted copy:
+the upstream project does not contain all of these Vietnamese/shared tools.
+
+Keep this folder private. Your profile and preferences will be saved here.
+Start with your own CV; no dummy candidate or demo application is included.
+
+2. INSTALL GEMINI AND THE BASIC TOOLS
+
+Open Terminal (press Command-Space, type Terminal, then press Enter).
+
+If Homebrew is not installed, install it from https://brew.sh and follow its
+printed “Next steps” before continuing. Then run:
+
+    brew install gemini-cli python poppler
+
+Check Python:
+
+    python3 --version
+
+It needs to be Python 3.10 or newer. Gemini installation reference:
+https://geminicli.com/docs/get-started/installation/
+
+3. OPEN THE PROJECT AND PREPARE IT
+
+Run these commands in Terminal, one at a time:
+
+    cd ~/Documents/ai-job-search
+    python3 tools/job_runtime.py bootstrap
+    .venv/bin/python tools/job_runtime.py doctor
+    gemini
+
+When Gemini asks you to sign in, choose “Sign in with Google” and finish the
+browser login. Some account types require additional Google configuration;
+follow Gemini's authentication instructions if prompted.
+
+The doctor command may report missing PDF tools. That is useful information:
+the next prompt helps you finish installation. Bootstrap installs the Python
+dependency only; PDF compilers are a separate step.
+
+Paste this into Gemini:
+
+    Read AGENTS.md and VIETNAM_WORKFLOW.md. Use .venv/bin/python for this
+    project's Python commands. Run the readiness check and help me finish
+    setup on macOS. If PDF tools are missing, follow SETUP.md to install the
+    required TeX tools and template packages, reusing an existing TeX
+    installation if there is one. Explain installations before running them.
+    Tell me when both job searching and PDF generation are ready. Never
+    submit an application or upload this folder publicly.
+
+Gemini may suggest TinyTeX and its template packages. These are the tools
+that turn the application documents into PDFs. Follow the proposed setup
+steps, then have Gemini run the readiness check again. Do not continue to
+PDF generation while it reports missing tools.
+
+TinyTeX reference: https://yihui.org/tinytex/
+
+4. ADD YOUR CV AND PREFERENCES
+
+In Finder, copy your CV PDF into:
+
+    Documents/ai-job-search/documents/cv/
+
+Give it a simple name such as my-cv.pdf. A text-based PDF is easiest; if it is
+a scan and Gemini cannot read it, paste the CV text instead. Your CV content
+will be read by Gemini.
+
+Paste this into Gemini, replacing the bracketed preferences:
+
+    Set up my job-search profile from documents/cv/my-cv.pdf.
+    My preferred roles are [role titles or type of work].
+    My preferred locations are [cities and maximum commute].
+    I want [onsite, hybrid, remote, or any] work.
+    My minimum salary is [amount] VND gross per month, or flag salary as
+    unknown if a posting does not state it.
+    I want [full-time, part-time, internship, or other] positions.
+    My working languages and levels are [languages and proficiency].
+    Write my CV in [Vietnamese or English] and match each cover letter
+    to the job posting's language.
+    Exclude [industries, companies, travel, shifts, or other deal-breakers].
+    Show me the extracted facts and preferences before saving. Ask about
+    missing details. Do not invent experience, skills, or achievements.
+
+Review the summary, correct errors, and confirm it before moving on.
+You can write your prompts and answers in Vietnamese.
+
+5. FIND AND RANK JOBS
+
+Paste this into Gemini:
+
+    Find up to five jobs on CareerViet using my saved profile and preferences.
+    Use the full-description collection workflow and rank the jobs by fit.
+    Show the title, company, location, salary if available, source URL,
+    reasons for the match, and important gaps. Report failed retrievals and
+    unknown details honestly. Save the results and avoid duplicates.
+    Do not prepare applications until I choose a job.
+
+CareerViet is the currently tested direct source. Search covers the first
+results page; it does not promise every available job. If another website
+is blocked, you can paste a complete posting for evaluation instead.
+
+6. GENERATE AN APPLICATION
+
+Choose a job from the shortlist. Paste this into Gemini:
+
+    Prepare an application for [the chosen job title, company, and URL].
+    Evaluate it against my profile first and explain the main gaps. Then
+    create a tailored CV and cover letter using only my confirmed facts.
+    Generate the PDFs with the shared compile helper and run the standard
+    page-count, text and layout checks. Use the stock two-page CV and
+    one-page cover-letter templates. Tell me where the PDFs are saved.
+    Clearly identify any review you cannot perform. Keep the application
+    marked drafted; do not send or submit it.
+
+The CV PDF is saved under cv/ and the cover-letter PDF under cover_letters/.
+Gemini should provide the exact filenames. If a check fails, ask it to fix
+the problem and repeat the check rather than skipping it.
+
+7. REVIEW THE PDFS AND APPLY YOURSELF
+
+Open both PDFs in Preview. Check your contact details, names, dates,
+Vietnamese accents, layout, and whether every claim is accurate.
+An AI fit score is guidance, not a guarantee that you meet every requirement.
+
+When you are satisfied, submit the application yourself on the employer's
+website. After you actually submit, tell Gemini which job you submitted and
+on what date so it can update your tracker.
+
+8. RETURN LATER
+
+Open Terminal and run:
+
+    cd ~/Documents/ai-job-search
+    gemini
+
+Then paste:
+
+    Read the shared workflow and my saved job-search status. Where did we
+    leave off, and what should I do next? Do not search again, re-rank jobs,
+    or overwrite existing applications until I ask.
+
+To change your preferences, say what changed and ask Gemini to update your
+saved profile. Your profile, shortlist and application tracking live in
+this folder, so keep a private backup.
+
+IF SOMETHING GOES WRONG
+
+- “command not found”: reopen Terminal and check Homebrew's printed setup
+  instructions. For missing PDF tools, ask Gemini to run doctor again.
+- Missing Python packages: use .venv/bin/python for project commands.
+- HTTP 403 or unavailable source: this is an access failure, not zero jobs.
+  Use CareerViet when available, or provide the complete posting yourself.
+- Missing package, glyph, or PDF error: ask Gemini to read the compile log,
+  fix the specific issue, and run the checks again.
+- No independent reviewer or image inspection: review the PDFs yourself;
+  Gemini should not claim those unavailable checks passed.
+
+Official Gemini sign-in help:
+https://geminicli.com/docs/get-started/

@@ -1,0 +1,79 @@
+{
+  "market": "Vietnam",
+  "updated": "2026-11-04",
+  "purpose": "Candidate job boards for the Vietnamese job-search MVP. Listed sources are not automatically enabled or verified integrations.",
+  "sources": [
+    {
+      "name": "TopCV",
+      "url": "https://www.topcv.vn/viec-lam",
+      "priority": "first_mvp_target",
+      "status": "unavailable",
+      "notes": "Direct search requests returned HTTP 403 on repeated checks. Use posting-text or saved-HTML import; live direct scraping is not verified.",
+      "id": "topcv",
+      "probe_url": "https://www.topcv.vn/tim-viec-lam-python",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    },
+    {
+      "name": "Indeed Vietnam",
+      "url": "https://vn.indeed.com/?hl=en",
+      "status": "unavailable",
+      "id": "indeed",
+      "probe_url": "https://vn.indeed.com/jobs?q=python&l=Vietnam",
+      "notes": "Direct search requests returned HTTP 403 on repeated checks. No verified search parser.",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    },
+    {
+      "name": "VietnamWorks",
+      "url": "https://www.vietnamworks.com/",
+      "status": "accessible_unverified",
+      "id": "vietnamworks",
+      "probe_url": "https://www.vietnamworks.com/python-kw",
+      "notes": "HTTP 200 search page contains loading placeholders and search metadata; listing retrieval requires further investigation.",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    },
+    {
+      "name": "JoyWork",
+      "url": "https://joywork.vn/",
+      "status": "accessible_unverified",
+      "id": "joywork",
+      "probe_url": "https://joywork.vn/jobs",
+      "notes": "HTTP 200 jobs page did not expose posting links in the retrieved HTML. Client-side rendering needs further investigation.",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    },
+    {
+      "name": "JobsGO",
+      "url": "https://jobsgo.vn/",
+      "status": "unavailable",
+      "id": "jobsgo",
+      "probe_url": "https://jobsgo.vn/viec-lam.html?keyword=python",
+      "notes": "robots.txt returned HTTP 403, leaving access policy unconfirmed. The connector stops before requesting search content.",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    },
+    {
+      "name": "CareerViet",
+      "url": "https://careerviet.vn/",
+      "status": "batch_smoke_passed",
+      "id": "careerviet",
+      "probe_url": "https://careerviet.vn/viec-lam/python-k-vi.html",
+      "notes": "Earlier separate search/detail calls encountered intermittent robots responses. The collect command reuses a validated in-memory policy for at most five minutes, checking every path. Two five-record direct collections and the full Codex run each fetched all five complete descriptions. First page only; future availability is not guaranteed.",
+      "checked_at": "2026-11-04T01:54:41.914784+00:00",
+      "adapter": "batch_full_descriptions_and_first_page_search"
+    },
+    {
+      "name": "Vieclam24h",
+      "url": "https://vieclam24h.vn/",
+      "status": "accessible_unverified",
+      "id": "vieclam24h",
+      "probe_url": "https://vieclam24h.vn/tim-kiem-viec-lam-nhanh?keyword=python",
+      "notes": "HTTP 200 contains embedded job data, but the keyword=python probe returned unrelated roles. Correct filter semantics and detail extraction remain unverified.",
+      "checked_at": "2026-11-04T01:12:13.199298+00:00",
+      "adapter": "access_probe_and_import_only"
+    }
+  ],
+  "validation_report": "job_scraper/vietnam_checks.json"
+}
